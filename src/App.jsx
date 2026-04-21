@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
+import AuthGate from './components/AuthGate';
+import { useSession } from './useSession';
 
 export default function App() {
+  return (
+    <AuthGate>
+      <Dashboard />
+    </AuthGate>
+  );
+}
+
+function Dashboard() {
+  const session = useSession();
   const [coaches, setCoaches] = useState(null);
   const [error, setError] = useState(null);
 
@@ -16,32 +27,42 @@ export default function App() {
     })();
   }, []);
 
-  if (error) {
-    return (
-      <div style={{ padding: 40, fontFamily: 'sans-serif' }}>
-        <h2>Error</h2>
-        <pre style={{ background: '#fee', padding: 16, whiteSpace: 'pre-wrap' }}>{error}</pre>
-        <p>
-          If this is a permission/authentication error — expected. RLS is blocking
-          anonymous reads, which is the correct behaviour.
-        </p>
-      </div>
-    );
-  }
-
-  if (!coaches) return <div style={{ padding: 40 }}>Loading…</div>;
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif' }}>
-      <h1>COVER — smoke test</h1>
-      <p>Loaded {coaches.length} coaches from Supabase:</p>
-      <ul>
-        {coaches.map((c) => (
-          <li key={c.email}>
-            <strong>{c.name}</strong> · {c.email} · {c.roles.join(', ')}
-          </li>
-        ))}
-      </ul>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>COVER — logged in smoke test</h1>
+        <div>
+          <span style={{ marginRight: 12, color: '#666' }}>
+            Signed in as <strong>{session.user.email}</strong>
+          </span>
+          <button onClick={logout} style={{ padding: '6px 12px', cursor: 'pointer' }}>
+            Log out
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <pre style={{ background: '#fee', padding: 16 }}>{error}</pre>
+      )}
+
+      {!coaches ? (
+        <p>Loading coaches…</p>
+      ) : (
+        <>
+          <p>Loaded {coaches.length} coaches from Supabase:</p>
+          <ul>
+            {coaches.map((c) => (
+              <li key={c.email}>
+                <strong>{c.name}</strong> · {c.email} · {c.roles.join(', ')}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
