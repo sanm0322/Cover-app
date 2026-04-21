@@ -30,20 +30,21 @@ export function useShifts() {
             setError(error.message);
             setShifts([]);
         } else {
-            // Convert snake_case → camelCase to match the prototype's shape
-            setShifts((data || []).map((s) => ({
-                id: s.id,
-                groupId: s.group_id,
-                postedBy: s.posted_by,
-                date: s.date,
-                time: s.time.slice(0, 5),  // Postgres 'time' returns 'HH:MM:SS' — strip seconds
-                className: s.class_name,
-                reason: s.reason,
-                status: s.status,
-                claimedBy: s.claimed_by,
-                claimedAt: s.claimed_at,
-                createdAt: s.created_at,
-            })));
+            setShifts((data || [])
+                .filter((s) => s.status !== 'cancelled')   // ← new
+                .map((s) => ({
+                    id: s.id,
+                    groupId: s.group_id,
+                    postedBy: s.posted_by,
+                    date: s.date,
+                    time: s.time.slice(0, 5),  // Postgres 'time' returns 'HH:MM:SS' — strip seconds
+                    className: s.class_name,
+                    reason: s.reason,
+                    status: s.status,
+                    claimedBy: s.claimed_by,
+                    claimedAt: s.claimed_at,
+                    createdAt: s.created_at,
+                })));
             setError(null);
         }
         setLoading(false);
