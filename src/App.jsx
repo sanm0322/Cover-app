@@ -3,6 +3,9 @@ import { supabase } from './supabaseClient';
 import { useSession } from './useSession';
 import AuthGate from './components/AuthGate';
 import TopBar from './components/TopBar';
+import Dashboard from './components/Dashboard';
+import { useShifts } from './lib/useShifts';
+import { useCoachLookup } from './lib/useCoachLookup';
 import { styles } from './lib/styles';
 
 export default function App() {
@@ -17,8 +20,9 @@ function Shell() {
   const session = useSession();
   const [currentCoach, setCurrentCoach] = useState(null);
   const [allCoaches, setAllCoaches] = useState([]);
+  const { shifts, loading, error } = useShifts();
+  const coachById = useCoachLookup(allCoaches);
 
-  // Load the logged-in user's coach row + the full roster
   useEffect(() => {
     if (!session?.user?.email) return;
     (async () => {
@@ -28,7 +32,6 @@ function Shell() {
         .order('name');
       if (!data) return;
       setAllCoaches(data);
-      // Match by email (case-insensitive to be safe)
       const me = data.find(
         (c) => c.email.toLowerCase() === session.user.email.toLowerCase()
       );
@@ -40,50 +43,37 @@ function Shell() {
     await supabase.auth.signOut();
   };
 
-  return (
-    <div style={styles.root}>
-      <TopBar coach={currentCoach} onLogout={handleLogout} />
+  // Placeholder handlers — wired up properly in Part 5
+  const handlePostShift = () => alert('Post shift — coming in Part 5');
+  const handleClaim = (shifts) => alert(`Claim ${shifts.length} shift(s) — coming in Part 5`);
+  const handleCancel = (shifts) => alert(`Cancel ${shifts.length} shift(s) — coming in Part 5`);
 
-      <main style={styles.main}>
-        <PlaceholderDashboard
-          currentCoach={currentCoach}
-          allCoaches={allCoaches}
-        />
-      </main>
-    </div>
-  );
-}
-
-// Temporary. Will be replaced by the real Dashboard in Part 4.
-function PlaceholderDashboard({ currentCoach, allCoaches }) {
   if (!currentCoach) {
     return (
-      <div style={{ padding: 40, color: '#87837b' }}>
-        Loading your coach profile…
+      <div style={styles.root}>
+        <TopBar coach={null} onLogout={handleLogout} />
+        <div style={{ padding: 40, color: '#87837b' }}>
+          Loading your coach profile…
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px' }}>
-      <div style={styles.kicker}>DASHBOARD</div>
-      <h1 style={styles.pageTitle}>Hey, {currentCoach.name.split(' ')[0]}.</h1>
-      <p style={{ color: '#3a3a3a', marginBottom: 32 }}>
-        Welcome to COVER. The real dashboard is coming in Part 4.
-      </p>
-      <div style={{ padding: 20, background: '#faf7ed', border: '1px solid #d9d2bf', borderRadius: 6 }}>
-        <div style={styles.kicker}>TEAM ROSTER</div>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {allCoaches.map((c) => (
-            <li key={c.id} style={{ padding: '6px 0', borderBottom: '1px solid #e5e0cf' }}>
-              <strong>{c.name}</strong>
-              <span style={{ color: '#87837b', marginLeft: 12, fontSize: 12 }}>
-                {c.initials} · {c.roles.join(', ')}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div style={styles.root}>
+      <TopBar coach={currentCoach} onLogout={handleLogout} />
+      <main style={styles.main}>
+        <Dashboard
+          currentCoach={currentCoach}
+          coachById={coachById}
+          shifts={shifts}
+          loading={loading}
+          error={error}
+          onPostShift={handlePostShift}
+          onClaim={handleClaim}
+          onCancel={handleCancel}
+        />
+      </main>
     </div>
   );
 }
