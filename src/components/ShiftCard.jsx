@@ -14,7 +14,7 @@ import Avatar from './primitives/Avatar';
  *   onClaim: (shifts) => void  (only relevant for 'open-other')
  *   onCancel: (shifts) => void (only relevant for 'mine')
  */
-export default function ShiftCard({ group, variant, currentUserId, coachById, onClaim, onCancel }) {
+export default function ShiftCard({ group, variant, currentUserId, coachById, onClaim, onCancel, onRelease }) {
     const shifts = group;
     const first = shifts[0];
     const isGroup = shifts.length > 1;
@@ -41,6 +41,7 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
 
     const canClaim = variant === 'open-other' && openShifts.length > 0;
     const canCancel = variant === 'mine' && openShifts.length > 0;
+    const canRelease = variant === 'covering' && claimedShifts.some((s) => !isPast(s.date, s.time));
 
     return (
         <article
@@ -134,7 +135,7 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
                 )}
             </div>
 
-            {(canClaim || canCancel) && (
+            {(canClaim || canCancel || canRelease) && (
                 <div style={styles.cardAction}>
                     {canClaim && (
                         <button onClick={() => onClaim(shifts)} style={styles.claimBtn}>
@@ -148,6 +149,17 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
                         <button onClick={() => onCancel(openShifts)} style={styles.cancelBtn}>
                             <X size={14} />{' '}
                             {openShifts.length > 1 ? `Cancel ${openShifts.length} open` : 'Cancel request'}
+                        </button>
+                    )}
+                    {canRelease && (
+                        <button
+                            onClick={() => onRelease(claimedShifts.filter((s) => !isPast(s.date, s.time)))}
+                            style={styles.cancelBtn}
+                        >
+                            <X size={14} />{' '}
+                            {claimedShifts.filter((s) => !isPast(s.date, s.time)).length > 1
+                                ? `Release ${claimedShifts.filter((s) => !isPast(s.date, s.time)).length}`
+                                : 'Release shift'}
                         </button>
                     )}
                 </div>

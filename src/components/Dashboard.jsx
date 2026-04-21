@@ -30,6 +30,7 @@ export default function Dashboard({
     onPostShift,
     onClaim,
     onCancel,
+    onRelease,
 }) {
     if (error) {
         return (
@@ -122,6 +123,7 @@ export default function Dashboard({
                             variant="covering"
                             currentUserId={currentCoach.id}
                             coachById={coachById}
+                            onRelease={onRelease}
                         />
                     ))
                 )}

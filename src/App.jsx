@@ -11,6 +11,7 @@ import { addHoursToTime } from './lib/helpers';
 import { styles } from './lib/styles';
 import ConfirmClaimModal from './components/ConfirmClaimModal';
 import ConfirmCancelModal from './components/ConfirmCancelModal';
+import ConfirmUnclaimModal from './components/ConfirmUnclaimModal';
 
 export default function App() {
   return (
@@ -129,6 +130,28 @@ function Shell() {
       setIsSubmitting(false);
     }
   };
+  const handleUnclaim = async (shiftsToRelease) => {
+    setIsSubmitting(true);
+    try {
+      const ids = shiftsToRelease.map((s) => s.id);
+      const { error } = await supabase
+        .from('shifts')
+        .update({
+          status: 'open',
+          claimed_by: null,
+          claimed_at: null,
+        })
+        .in('id', ids)
+        .eq('claimed_by', currentCoach.id);  // Only release shifts you actually claimed
+
+      if (error) throw error;
+
+      await refetch();
+      setModal(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!currentCoach) {
     return (
@@ -154,6 +177,7 @@ function Shell() {
           onPostShift={() => setModal({ type: 'post-shift' })}
           onClaim={(shifts) => setModal({ type: 'confirm-claim', shifts })}
           onCancel={(shifts) => setModal({ type: 'confirm-cancel', shifts })}
+          onRelease={(shifts) => setModal({ type: 'confirm-unclaim', shifts })}
         />
       </main>
 
@@ -178,6 +202,15 @@ function Shell() {
           shifts={modal.shifts}
           onClose={() => setModal(null)}
           onConfirm={handleCancel}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      {modal?.type === 'confirm-unclaim' && (
+        <ConfirmUnclaimModal
+          shifts={modal.shifts}
+          onClose={() => setModal(null)}
+          onConfirm={handleUnclaim}
+          coachById={coachById}
           isSubmitting={isSubmitting}
         />
       )}
