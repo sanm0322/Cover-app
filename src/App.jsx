@@ -37,7 +37,7 @@ function Dashboard() {
         <h1>COVER — logged in smoke test</h1>
         <div>
           <span style={{ marginRight: 12, color: '#666' }}>
-            Signed in as <strong>{session.user.email}</strong>
+            Signed in as <strong>{session?.user?.email ?? '...'}</strong>
           </span>
           <button onClick={logout} style={{ padding: '6px 12px', cursor: 'pointer' }}>
             Log out
