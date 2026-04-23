@@ -285,7 +285,7 @@ export const styles = {
         color: '#87837b',
     },
     input: {
-        padding: '10px 34px 10px 14px', border: '1px solid #d9d2bf',
+        padding: '10px 14px', border: '1px solid #d9d2bf',
         borderRadius: 4, fontSize: 14, background: '#faf7ed',
         color: '#141414', width: '100%',
     },
