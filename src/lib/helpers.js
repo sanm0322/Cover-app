@@ -66,7 +66,7 @@ export const isPast = (dateISO, timeStr) => hoursUntil(dateISO, timeStr) < 0;
 export const groupShifts = (shiftsArr) => {
     const map = new Map();
     for (const s of shiftsArr) {
-        const key = s.groupId || s.id;
+        const key = `${s.groupId || s.id}__${s.date}`;
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(s);
     }
