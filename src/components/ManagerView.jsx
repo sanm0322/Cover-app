@@ -111,10 +111,10 @@ export default function ManagerView({ shifts, notifications, coachById, allCoach
                         {filtered.length === 0 ? (
                             <EmptyState message="Nothing here for this filter." />
                         ) : (
-                            groupShifts(filtered).map((g) => (
+                            filtered.map((s) => (
                                 <ShiftCard
-                                    key={g[0].groupId || g[0].id}
-                                    group={g}
+                                    key={s.id}
+                                    group={[s]}
                                     variant="manager"
                                     currentUserId={null}
                                     coachById={coachById}
