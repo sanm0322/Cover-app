@@ -82,3 +82,14 @@ export const CLASS_TYPES = [
     'CrossFit WOD', 'Weightlifting', 'Open Gym', 'Gymnastics',
     'Endurance', 'Mobility', 'Teens', 'Oly Lifting',
 ];
+
+/**
+ * Small helper for constructing notification rows from a Supabase write.
+ * Returns the row object; caller does the .insert().
+ */
+export const buildNotification = (type, groupId, shiftIds, actorId) => ({
+  type,
+  group_id: groupId,
+  shift_ids: shiftIds,
+  actor_id: actorId,
+});

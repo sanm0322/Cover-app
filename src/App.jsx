@@ -4,14 +4,17 @@ import { useSession } from './useSession';
 import AuthGate from './components/AuthGate';
 import TopBar from './components/TopBar';
 import Dashboard from './components/Dashboard';
+import ManagerView from './components/ManagerView';
+import RoleToggle from './components/RoleToggle';
 import PostShiftModal from './components/PostShiftModal';
-import { useShifts } from './lib/useShifts';
-import { useCoachLookup } from './lib/useCoachLookup';
-import { addHoursToTime } from './lib/helpers';
-import { styles } from './lib/styles';
 import ConfirmClaimModal from './components/ConfirmClaimModal';
 import ConfirmCancelModal from './components/ConfirmCancelModal';
 import ConfirmUnclaimModal from './components/ConfirmUnclaimModal';
+import { useShifts } from './lib/useShifts';
+import { useCoachLookup } from './lib/useCoachLookup';
+import { useNotifications } from './lib/useNotifications';
+import { addHoursToTime } from './lib/helpers';
+import { styles } from './lib/styles';
 
 export default function App() {
   return (
@@ -26,10 +29,12 @@ function Shell() {
   const [currentCoach, setCurrentCoach] = useState(null);
   const [allCoaches, setAllCoaches] = useState([]);
   const { shifts, loading, error, refetch } = useShifts();
+  const { notifications, refetch: refetchNotifs } = useNotifications(50);
   const coachById = useCoachLookup(allCoaches);
 
-  const [modal, setModal] = useState(null);     // null | { type: 'post-shift' } | ...
+  const [modal, setModal] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [role, setRole] = useState('coach');  // 'coach' | 'manager'
 
   useEffect(() => {
     if (!session?.user?.email) return;
@@ -51,17 +56,9 @@ function Shell() {
     await supabase.auth.signOut();
   };
 
-  /**
-   * Post one or more shift coverage requests.
-   *
-   * `entries` is an array where each entry has { date, time, className, shifts (1-6), reason }.
-   * We flatten back-to-back classes (shifts > 1 means "N hourly classes starting at time"),
-   * group them all under a single group_id, and insert as one batch.
-   */
   const handlePostShift = async (entries) => {
     setIsSubmitting(true);
     try {
-      // Generate a single group_id for this whole submission
       const groupId = crypto.randomUUID();
       const rows = [];
       entries.forEach((entry) => {
@@ -79,17 +76,26 @@ function Shell() {
         }
       });
 
-      const { error } = await supabase.from('shifts').insert(rows);
+      const { data: inserted, error } = await supabase
+        .from('shifts')
+        .insert(rows)
+        .select('id');
       if (error) throw error;
 
-      await refetch();
+      await supabase.from('notifications').insert({
+        type: 'posted',
+        group_id: groupId,
+        shift_ids: inserted.map((s) => s.id),
+        actor_id: currentCoach.id,
+      });
+
+      await Promise.all([refetch(), refetchNotifs()]);
       setModal(null);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Stubs for Parts 3 and 4 of this playbook
   const handleClaim = async (selectedShifts) => {
     setIsSubmitting(true);
     try {
@@ -102,16 +108,23 @@ function Shell() {
           claimed_at: new Date().toISOString(),
         })
         .in('id', ids)
-        .eq('status', 'open');  // Only update if still open (guards against race conditions)
-
+        .eq('status', 'open');
       if (error) throw error;
 
-      await refetch();
+      await supabase.from('notifications').insert({
+        type: 'claimed',
+        group_id: selectedShifts[0].groupId || selectedShifts[0].id,
+        shift_ids: ids,
+        actor_id: currentCoach.id,
+      });
+
+      await Promise.all([refetch(), refetchNotifs()]);
       setModal(null);
     } finally {
       setIsSubmitting(false);
     }
   };
+
   const handleCancel = async (shiftsToCancel) => {
     setIsSubmitting(true);
     try {
@@ -120,16 +133,23 @@ function Shell() {
         .from('shifts')
         .update({ status: 'cancelled' })
         .in('id', ids)
-        .eq('status', 'open');  // Only cancel if still open
-
+        .eq('status', 'open');
       if (error) throw error;
 
-      await refetch();
+      await supabase.from('notifications').insert({
+        type: 'cancelled',
+        group_id: shiftsToCancel[0].groupId || shiftsToCancel[0].id,
+        shift_ids: ids,
+        actor_id: currentCoach.id,
+      });
+
+      await Promise.all([refetch(), refetchNotifs()]);
       setModal(null);
     } finally {
       setIsSubmitting(false);
     }
   };
+
   const handleUnclaim = async (shiftsToRelease) => {
     setIsSubmitting(true);
     try {
@@ -142,11 +162,17 @@ function Shell() {
           claimed_at: null,
         })
         .in('id', ids)
-        .eq('claimed_by', currentCoach.id);  // Only release shifts you actually claimed
-
+        .eq('claimed_by', currentCoach.id);
       if (error) throw error;
 
-      await refetch();
+      await supabase.from('notifications').insert({
+        type: 'released',
+        group_id: shiftsToRelease[0].groupId || shiftsToRelease[0].id,
+        shift_ids: ids,
+        actor_id: currentCoach.id,
+      });
+
+      await Promise.all([refetch(), refetchNotifs()]);
       setModal(null);
     } finally {
       setIsSubmitting(false);
@@ -164,21 +190,36 @@ function Shell() {
     );
   }
 
+  const isManager = currentCoach.roles?.includes('manager');
+
   return (
     <div style={styles.root}>
       <TopBar coach={currentCoach} onLogout={handleLogout} />
       <main style={styles.main}>
-        <Dashboard
-          currentCoach={currentCoach}
-          coachById={coachById}
-          shifts={shifts}
-          loading={loading}
-          error={error}
-          onPostShift={() => setModal({ type: 'post-shift' })}
-          onClaim={(shifts) => setModal({ type: 'confirm-claim', shifts })}
-          onCancel={(shifts) => setModal({ type: 'confirm-cancel', shifts })}
-          onRelease={(shifts) => setModal({ type: 'confirm-unclaim', shifts })}
-        />
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 20px 0' }}>
+          {isManager && <RoleToggle role={role} onChange={setRole} />}
+        </div>
+
+        {isManager && role === 'manager' ? (
+          <ManagerView
+            shifts={shifts}
+            notifications={notifications}
+            coachById={coachById}
+            allCoaches={allCoaches}
+          />
+        ) : (
+          <Dashboard
+            currentCoach={currentCoach}
+            coachById={coachById}
+            shifts={shifts}
+            loading={loading}
+            error={error}
+            onPostShift={() => setModal({ type: 'post-shift' })}
+            onClaim={(shifts) => setModal({ type: 'confirm-claim', shifts })}
+            onCancel={(shifts) => setModal({ type: 'confirm-cancel', shifts })}
+            onRelease={(shifts) => setModal({ type: 'confirm-unclaim', shifts })}
+          />
+        )}
       </main>
 
       {modal?.type === 'post-shift' && (
