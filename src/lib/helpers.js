@@ -87,7 +87,7 @@ export const groupShifts = (shiftsArr) => {
 export const CLASSES_BY_LOCATION = {
   KA: ['Functional CrossFit', 'Strength', 'Olympic Weightlifting'],
   OV: ['Classic CrossFit', 'Hyrox', 'Advanced CrossFit'],
-  HW: ['Classic CrossFit', 'Strength', 'Hyrox', 'Olympic Weightlifting', 'Advanced CrossFit'],
+  HW: ['Classic CrossFit', 'Functional CrossFit', 'Strength', 'Hyrox', 'Olympic Weightlifting', 'Advanced CrossFit', 'Open Gym'],
 };
 
 export const LOCATIONS = Object.keys(CLASSES_BY_LOCATION);
