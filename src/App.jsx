@@ -70,6 +70,7 @@ function Shell() {
             date: entry.date,
             time: i === 0 ? entry.time : addHoursToTime(entry.time, i),
             class_name: entry.className,
+            location: entry.location,
             reason: entry.reason || null,
             status: 'open',
           });

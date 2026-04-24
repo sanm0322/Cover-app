@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { styles } from '../lib/styles';
-import { CLASS_TYPES, isoDay, shiftDateISO, addHoursToTime, uid } from '../lib/helpers';
+import { CLASSES_BY_LOCATION, LOCATIONS, isoDay, shiftDateISO, addHoursToTime, uid } from '../lib/helpers';
 import ModalShell from './primitives/ModalShell';
 import Field from './primitives/Field';
 
@@ -21,10 +21,30 @@ import Field from './primitives/Field';
  */
 export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
     const [entries, setEntries] = useState([
-        { id: uid(), date: isoDay(1), time: '18:00', className: CLASS_TYPES[0], shifts: 1 },
+        {
+            id: uid(),
+            date: isoDay(1),
+            time: '18:00',
+            location: LOCATIONS[0],
+            className: CLASSES_BY_LOCATION[LOCATIONS[0]][0],
+            shifts: 1,
+        },
     ]);
     const [reason, setReason] = useState('');
     const [error, setError] = useState(null);
+
+    const updateEntryLocation = (id, newLocation) => {
+        setEntries((prev) => prev.map((e) => {
+            if (e.id !== id) return e;
+            const validClasses = CLASSES_BY_LOCATION[newLocation];
+            const stillValid = validClasses.includes(e.className);
+            return {
+                ...e,
+                location: newLocation,
+                className: stillValid ? e.className : validClasses[0],
+            };
+        }));
+    };
 
     const updateEntry = (id, patch) =>
         setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -32,9 +52,17 @@ export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
     const addEntry = () => {
         const last = entries[entries.length - 1];
         const nextDate = last ? shiftDateISO(last.date, 1) : isoDay(1);
+        const defaultLoc = last?.location ?? LOCATIONS[0];
         setEntries((prev) => [
             ...prev,
-            { id: uid(), date: nextDate, time: last?.time ?? '18:00', className: last?.className ?? CLASS_TYPES[0], shifts: 1 },
+            {
+                id: uid(),
+                date: nextDate,
+                time: last?.time ?? '18:00',
+                location: defaultLoc,
+                className: last?.className ?? CLASSES_BY_LOCATION[defaultLoc][0],
+                shifts: 1,
+            },
         ]);
     };
 
@@ -122,6 +150,16 @@ export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
                                             <option value={6}>6</option>
                                         </select>
                                     </Field>
+                                    <Field label="Location">
+                                        <select
+                                            value={entry.location}
+                                            onChange={(e) => updateEntryLocation(entry.id, e.target.value)}
+                                            style={styles.input}
+                                            disabled={isSubmitting}
+                                        >
+                                            {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
+                                        </select>
+                                    </Field>
                                     <Field label="Class">
                                         <select
                                             value={entry.className}
@@ -129,7 +167,7 @@ export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
                                             style={styles.input}
                                             disabled={isSubmitting}
                                         >
-                                            {CLASS_TYPES.map((c) => <option key={c}>{c}</option>)}
+                                            {CLASSES_BY_LOCATION[entry.location].map((c) => <option key={c}>{c}</option>)}
                                         </select>
                                     </Field>
                                 </div>

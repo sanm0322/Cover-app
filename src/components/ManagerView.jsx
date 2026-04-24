@@ -151,16 +151,16 @@ export default function ManagerView({ shifts, notifications, coachById, allCoach
                                         <strong>{actor.name}</strong>{' '}
                                         {n.type === 'posted' && (count > 1
                                             ? <>posted <em>{count} classes</em>{firstShift ? <> from {formatDay(firstShift.date)} · {firstShift.time}</> : null}</>
-                                            : <>posted{firstShift ? <> <em>{firstShift.className}</em> on {formatDay(firstShift.date)} · {firstShift.time}</> : ' a class'}</>)}
+                                            : <>posted{firstShift ? <> <em>{firstShift.className}</em> at <strong>{firstShift.location}</strong> on {formatDay(firstShift.date)} · {firstShift.time}</> : ' a class'}</>)}
                                         {n.type === 'claimed' && (count > 1
                                             ? <>claimed <em>{count} classes</em>{firstShift ? <> starting {formatDay(firstShift.date)} · {firstShift.time}</> : null}</>
-                                            : <>claimed{firstShift ? <> <em>{firstShift.className}</em> on {formatDay(firstShift.date)} · {firstShift.time}</> : ' a shift'}</>)}
+                                            : <>claimed{firstShift ? <> <em>{firstShift.className}</em> at <strong>{firstShift.location}</strong> on {formatDay(firstShift.date)} · {firstShift.time}</> : ' a shift'}</>)}
                                         {n.type === 'cancelled' && (count > 1
                                             ? <>cancelled a request for <em>{count} classes</em></>
                                             : <>cancelled their request{firstShift ? <> for <em>{firstShift.className}</em></> : ''}</>)}
                                         {n.type === 'released' && (count > 1
                                             ? <>released <em>{count} shifts</em> back to the pool</>
-                                            : <>released{firstShift ? <> <em>{firstShift.className}</em></> : ' a shift'} back to the pool</>)}
+                                            : <>released{firstShift ? <> <em>{firstShift.className}</em>at <strong>{firstShift.location}</strong> on {formatDay(firstShift.date)} · {firstShift.time}</> : ' a shift'} back to the pool</>)}
                                     </div>
                                 </div>
                             );

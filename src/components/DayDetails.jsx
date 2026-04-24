@@ -76,7 +76,10 @@ export default function DayDetails({
                             <li key={s.id} style={styles.dayShiftRow}>
                                 <span style={{ ...styles.dayShiftDot, background: statusColor }} />
                                 <span style={styles.dayShiftTime}>{s.time}</span>
-                                <span style={styles.dayShiftClass}>{s.className}</span>
+                                <span style={styles.dayShiftClass}>
+                                    <span style={{ ...styles.locationChip, marginRight: 8, fontSize: 9 }}>{s.location}</span>
+                                    {s.className}
+                                </span>
                                 <span style={styles.dayShiftPeople}>
                                     <Avatar coach={poster} size={18} />
                                     <span style={styles.dayShiftName}>{poster.name}</span>

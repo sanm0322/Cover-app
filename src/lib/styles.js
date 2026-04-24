@@ -165,6 +165,18 @@ export const styles = {
         padding: '3px 7px', border: '1px solid', borderRadius: 3,
         textTransform: 'uppercase', whiteSpace: 'nowrap',
     },
+    locationChip: {
+        display: 'inline-block',
+        padding: '2px 8px',
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        background: '#141414',
+        color: '#ece7da',
+        borderRadius: 3,
+        flexShrink: 0,
+    },
     cardMeta: {
         display: 'flex', gap: 14, color: '#3a3a3a',
         fontSize: 13, marginBottom: 10, flexWrap: 'wrap',

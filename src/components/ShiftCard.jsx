@@ -53,10 +53,15 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
         >
             <div style={styles.cardMain}>
                 <div style={styles.cardTop}>
-                    <div style={styles.cardClass}>
-                        {isGroup
-                            ? `${shifts.length} classes · ${groupClassSummary(shifts)}`
-                            : first.className}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={styles.cardClass}>
+                            {isGroup
+                                ? `${shifts.length} classes · ${groupClassSummary(shifts)}`
+                                : first.className}
+                        </div>
+                        <span style={styles.locationChip}>
+                            {isGroup ? groupLocationSummary(shifts) : first.location}
+                        </span>
                     </div>
                     <div style={{ ...styles.statusTag, color: statusColor, borderColor: statusColor }}>
                         {statusLabel}
@@ -120,7 +125,10 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
                                 <li key={s.id} style={styles.subShiftRow}>
                                     <span style={{ ...styles.subShiftDot, background: dotColor }} />
                                     <span style={styles.subShiftWhen}>{formatDay(s.date)} · {s.time}</span>
-                                    <span style={styles.subShiftClass}>{s.className}</span>
+                                    <span style={styles.subShiftClass}>
+                                        <span style={{ ...styles.locationChip, marginRight: 8, fontSize: 9 }}>{s.location}</span>
+                                        {s.className}
+                                    </span>
                                     <span style={styles.subShiftStatus}>
                                         {isPast(s.date, s.time)
                                             ? 'past'
@@ -174,6 +182,12 @@ function groupClassSummary(shifts) {
     if (unique.length === 1) return unique[0];
     if (unique.length === 2) return unique.join(' + ');
     return `${unique.length} class types`;
+}
+
+function groupLocationSummary(shifts) {
+    const unique = [...new Set(shifts.map((s) => s.location))];
+    if (unique.length === 1) return unique[0];
+    return unique.sort().join(' + ');
 }
 
 function groupDateRange(shifts) {

@@ -78,10 +78,27 @@ export const groupShifts = (shiftsArr) => {
 };
 
 // Class types list — used by the Post Shift modal dropdown
-export const CLASS_TYPES = [
-    'CrossFit WOD', 'Weightlifting', 'Open Gym', 'Gymnastics',
-    'Endurance', 'Mobility', 'Teens', 'Oly Lifting',
-];
+/**
+ * Classes offered at each location. Edit this when the box adds or
+ * retires a class, or opens a new location. Everything downstream
+ * (post modal, cards, filters, display) reads from here — no other
+ * file needs updating.
+ */
+export const CLASSES_BY_LOCATION = {
+  KA: ['Functional CrossFit', 'Strength', 'Olympic Weightlifting'],
+  OV: ['Classic CrossFit', 'Hyrox', 'Advanced CrossFit'],
+  HW: ['Classic CrossFit', 'Strength', 'Hyrox', 'Olympic Weightlifting', 'Advanced CrossFit'],
+};
+
+export const LOCATIONS = Object.keys(CLASSES_BY_LOCATION);
+
+/**
+ * Returns all unique class types across all locations.
+ * Useful for building filter dropdowns or displaying lists.
+ */
+export const ALL_CLASSES = [
+  ...new Set(Object.values(CLASSES_BY_LOCATION).flat())
+].sort();
 
 /**
  * Small helper for constructing notification rows from a Supabase write.

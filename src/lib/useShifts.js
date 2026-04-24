@@ -23,7 +23,7 @@ export function useShifts() {
         setLoading(true);
         const { data, error } = await supabase
             .from('shifts')
-            .select('id, group_id, posted_by, date, time, class_name, reason, status, claimed_by, claimed_at, created_at')
+            .select('id, group_id, posted_by, date, time, class_name, location, reason, status, claimed_by, claimed_at, created_at')
             .order('date', { ascending: true })
             .order('time', { ascending: true });
         if (error) {
@@ -39,6 +39,7 @@ export function useShifts() {
                     date: s.date,
                     time: s.time.slice(0, 5),  // Postgres 'time' returns 'HH:MM:SS' — strip seconds
                     className: s.class_name,
+                    location: s.location,
                     reason: s.reason,
                     status: s.status,
                     claimedBy: s.claimed_by,
