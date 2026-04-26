@@ -1,4 +1,4 @@
-import { Calendar, Clock, Check, X, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Check, X, ArrowRight, Plus } from 'lucide-react';
 import { styles } from '../lib/styles';
 import { formatDay, hoursUntil, isPast } from '../lib/helpers';
 import Avatar from './primitives/Avatar';
@@ -14,7 +14,7 @@ import Avatar from './primitives/Avatar';
  *   onClaim: (shifts) => void  (only relevant for 'open-other')
  *   onCancel: (shifts) => void (only relevant for 'mine')
  */
-export default function ShiftCard({ group, variant, currentUserId, coachById, onClaim, onCancel, onRelease }) {
+export default function ShiftCard({ group, variant, currentUserId, coachById, onClaim, onCancel, onRelease, onAddToRequest }) {
     const shifts = group;
     const first = shifts[0];
     const isGroup = shifts.length > 1;
@@ -42,6 +42,7 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
     const canClaim = variant === 'open-other' && openShifts.length > 0;
     const canCancel = variant === 'mine' && openShifts.length > 0;
     const canRelease = variant === 'covering' && claimedShifts.some((s) => !isPast(s.date, s.time));
+    const canAddMore = variant === 'mine' && openShifts.length > 0;
 
     return (
         <article
@@ -168,6 +169,11 @@ export default function ShiftCard({ group, variant, currentUserId, coachById, on
                             {claimedShifts.filter((s) => !isPast(s.date, s.time)).length > 1
                                 ? `Release ${claimedShifts.filter((s) => !isPast(s.date, s.time)).length}`
                                 : 'Release shift'}
+                        </button>
+                    )}
+                    {canAddMore && (
+                        <button onClick={() => onAddToRequest(shifts)} style={styles.secondaryActionBtn}>
+                            <Plus size={14} strokeWidth={3} /> Add more
                         </button>
                     )}
                 </div>

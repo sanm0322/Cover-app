@@ -15,6 +15,7 @@ import { useCoachLookup } from './lib/useCoachLookup';
 import { useNotifications } from './lib/useNotifications';
 import { addHoursToTime } from './lib/helpers';
 import { styles } from './lib/styles';
+import BackToTop from './components/BackToTop';
 
 export default function App() {
   return (
@@ -72,6 +73,49 @@ function Shell() {
             class_name: entry.className,
             location: entry.location,
             reason: entry.reason || null,
+            status: 'open',
+          });
+        }
+      });
+
+      const { data: inserted, error } = await supabase
+        .from('shifts')
+        .insert(rows)
+        .select('id');
+      if (error) throw error;
+
+      await supabase.from('notifications').insert({
+        type: 'posted',
+        group_id: groupId,
+        shift_ids: inserted.map((s) => s.id),
+        actor_id: currentCoach.id,
+      });
+
+      await Promise.all([refetch(), refetchNotifs()]);
+      setModal(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddToRequest = async (entries, existingGroup) => {
+    setIsSubmitting(true);
+    try {
+      // Reuse the existing group's group_id
+      const groupId = existingGroup[0].groupId || existingGroup[0].id;
+
+      const rows = [];
+      entries.forEach((entry) => {
+        const count = Math.max(1, Math.min(6, Number(entry.shifts) || 1));
+        for (let i = 0; i < count; i++) {
+          rows.push({
+            group_id: groupId,
+            posted_by: currentCoach.id,
+            date: entry.date,
+            time: i === 0 ? entry.time : addHoursToTime(entry.time, i),
+            class_name: entry.className,
+            location: entry.location,
+            reason: entry.reason || existingGroup[0].reason || null,
             status: 'open',
           });
         }
@@ -219,15 +263,17 @@ function Shell() {
             onClaim={(shifts) => setModal({ type: 'confirm-claim', shifts })}
             onCancel={(shifts) => setModal({ type: 'confirm-cancel', shifts })}
             onRelease={(shifts) => setModal({ type: 'confirm-unclaim', shifts })}
+            onAddToRequest={(group) => setModal({ type: 'add-to-request', existingGroup: group })}
           />
         )}
       </main>
 
-      {modal?.type === 'post-shift' && (
+      {modal?.type === 'add-to-request' && (
         <PostShiftModal
           onClose={() => setModal(null)}
-          onSubmit={handlePostShift}
+          onSubmit={(entries) => handleAddToRequest(entries, modal.existingGroup)}
           isSubmitting={isSubmitting}
+          existingGroup={modal.existingGroup}
         />
       )}
       {modal?.type === 'confirm-claim' && (
@@ -256,6 +302,7 @@ function Shell() {
           isSubmitting={isSubmitting}
         />
       )}
+      <BackToTop />
     </div>
   );
 }

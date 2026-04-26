@@ -19,7 +19,7 @@ import Field from './primitives/Field';
  *     { date, time, className, shifts, reason }
  *   isSubmitting: boolean (true while the Supabase insert is in-flight)
  */
-export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
+export default function PostShiftModal({ onClose, onSubmit, isSubmitting, existingGroup }) {
     const [entries, setEntries] = useState([
         {
             id: uid(),
@@ -30,7 +30,7 @@ export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
             shifts: 1,
         },
     ]);
-    const [reason, setReason] = useState('');
+    const [reason, setReason] = useState(existingGroup?.[0]?.reason || '');
     const [error, setError] = useState(null);
 
     const updateEntryLocation = (id, newLocation) => {
@@ -94,15 +94,24 @@ export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
     return (
         <ModalShell onClose={onClose} maxWidth={640}>
             <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>REQUEST COVERAGE</h3>
+                <h3 style={styles.modalTitle}>
+                    {existingGroup ? 'ADD TO REQUEST' : 'REQUEST COVERAGE'}
+                </h3>
                 <button onClick={onClose} style={styles.closeBtn} disabled={isSubmitting}>
                     <X size={18} />
                 </button>
             </div>
             <p style={styles.modalIntro}>
-                Add the classes you need covered. Teaching back-to-back hours?
-                Set <strong>Shifts</strong> to <strong>2–6</strong> on a row to mean "N classes in a row starting at this time."
-                Everything you post here goes out as <strong>one request</strong>.
+                {existingGroup ? (
+                    <>
+                        Adding more classes to your existing request.{' '}
+                        The reason will be reused from the original; you can adjust it below if needed.
+                    </>
+                ) : (
+                    <>
+                        Add the classes you need covered. Teaching back-to-back hours? Set <strong>Shifts</strong> to <strong>2–6</strong> on a row to mean "N classes in a row starting at this time." Everything you post here goes out as <strong>one request</strong>.
+                    </>
+                )}
             </p>
 
             <div style={styles.entriesList}>
@@ -213,14 +222,13 @@ export default function PostShiftModal({ onClose, onSubmit, isSubmitting }) {
             )}
 
             <div style={styles.modalActions}>
-                <button onClick={onClose} style={styles.secondaryBtn} disabled={isSubmitting}>
-                    Cancel
-                </button>
                 <button onClick={submit} style={styles.primaryBtn} disabled={isSubmitting}>
                     <Plus size={14} strokeWidth={3} />{' '}
                     {isSubmitting
-                        ? 'Posting…'
-                        : totalShifts > 1 ? `Post request (${totalShifts} classes)` : 'Post request'}
+                        ? (existingGroup ? 'Adding…' : 'Posting…')
+                        : existingGroup
+                            ? (totalShifts > 1 ? `Add ${totalShifts} classes` : 'Add to request')
+                            : (totalShifts > 1 ? `Post request (${totalShifts} classes)` : 'Post request')}
                 </button>
             </div>
         </ModalShell>

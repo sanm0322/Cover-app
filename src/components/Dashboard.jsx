@@ -19,6 +19,7 @@ export default function Dashboard({
     onClaim,
     onCancel,
     onRelease,
+    onAddToRequest,
 }) {
     const [mode, setMode] = useState('list'); // 'list' | 'calendar'
 
@@ -41,6 +42,13 @@ export default function Dashboard({
     const coverGroups = groupShifts(myCoverShifts);
 
     const firstName = currentCoach.name.split(' ')[0].toUpperCase();
+    const scrollTo = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        // Account for sticky nav by scrolling slightly above the section
+        const y = el.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    };
 
     return (
         <div style={{ maxWidth: 880, margin: '0 auto', padding: '40px 20px' }}>
@@ -68,6 +76,20 @@ export default function Dashboard({
                 <Stat label="I'm covering" value={myCoverShifts.length} accent="green" />
             </div>
 
+            {mode === 'list' && (
+                <nav style={styles.sectionNav}>
+                    <button onClick={() => scrollTo('section-open')} style={styles.sectionNavBtn}>
+                        Open <span style={styles.sectionNavBtnCount}>{openShifts.length}</span>
+                    </button>
+                    <button onClick={() => scrollTo('section-mine')} style={styles.sectionNavBtn}>
+                        My requests <span style={styles.sectionNavBtnCount}>{myOpenShifts.length}</span>
+                    </button>
+                    <button onClick={() => scrollTo('section-covering')} style={styles.sectionNavBtn}>
+                        Covering <span style={styles.sectionNavBtnCount}>{myCoverShifts.length}</span>
+                    </button>
+                </nav>
+            )}
+
             <ViewModeToggle mode={mode} onChange={setMode} />
 
             {mode === 'calendar' ? (
@@ -81,58 +103,65 @@ export default function Dashboard({
                 />
             ) : (
                 <>
-                    <Section title="Open shifts" count={openShifts.length} icon={<Inbox size={14} />}>
-                        {openGroups.length === 0 ? (
-                            <EmptyState message={loading ? 'Loading…' : 'Nothing open right now. The board is clean.'} />
-                        ) : (
-                            openGroups.map((g) => (
-                                <ShiftCard
-                                    key={g[0].groupId || g[0].id}
-                                    group={g}
-                                    variant="open-other"
-                                    currentUserId={currentCoach.id}
-                                    coachById={coachById}
-                                    onClaim={onClaim}
-                                />
-                            ))
-                        )}
-                    </Section>
 
-                    <Section title="My requests" count={myOpenShifts.length} icon={<Bell size={14} />}>
-                        {myGroups.length === 0 ? (
-                            <EmptyState message="You haven't posted any classes needing cover." />
-                        ) : (
-                            myGroups.map((g) => (
-                                <ShiftCard
-                                    key={g[0].groupId || g[0].id}
-                                    group={g}
-                                    variant="mine"
-                                    currentUserId={currentCoach.id}
-                                    coachById={coachById}
-                                    onCancel={onCancel}
-                                />
-                            ))
-                        )}
-                    </Section>
-
-                    <Section title="Classes I'm covering" count={myCoverShifts.length} icon={<Shield size={14} />}>
-                        {coverGroups.length === 0 ? (
-                            <EmptyState message="You haven't picked up any classes yet." />
-                        ) : (
-                            coverGroups.map((g) => (
-                                <ShiftCard
-                                    key={g[0].groupId || g[0].id}
-                                    group={g}
-                                    variant="covering"
-                                    currentUserId={currentCoach.id}
-                                    coachById={coachById}
-                                    onRelease={onRelease}
-                                />
-                            ))
-                        )}
-                    </Section>
+                    <div id="section-open">
+                        <Section title="Open shifts" count={openShifts.length} icon={<Inbox size={14} />}>
+                            {openGroups.length === 0 ? (
+                                <EmptyState message={loading ? 'Loading…' : 'Nothing open right now. The board is clean.'} />
+                            ) : (
+                                openGroups.map((g) => (
+                                    <ShiftCard
+                                        key={g[0].groupId || g[0].id}
+                                        group={g}
+                                        variant="open-other"
+                                        currentUserId={currentCoach.id}
+                                        coachById={coachById}
+                                        onClaim={onClaim}
+                                    />
+                                ))
+                            )}
+                        </Section>
+                    </div>
+                    <div id="section-mine">
+                        <Section title="My requests" count={myOpenShifts.length} icon={<Bell size={14} />}>
+                            {myGroups.length === 0 ? (
+                                <EmptyState message="You haven't posted any classes needing cover." />
+                            ) : (
+                                myGroups.map((g) => (
+                                    <ShiftCard
+                                        key={g[0].groupId || g[0].id}
+                                        group={g}
+                                        variant="mine"
+                                        currentUserId={currentCoach.id}
+                                        coachById={coachById}
+                                        onCancel={onCancel}
+                                        onAddToRequest={onAddToRequest}
+                                    />
+                                ))
+                            )}
+                        </Section>
+                    </div>
+                    <div id="section-covering">
+                        <Section title="Classes I'm covering" count={myCoverShifts.length} icon={<Shield size={14} />}>
+                            {coverGroups.length === 0 ? (
+                                <EmptyState message="You haven't picked up any classes yet." />
+                            ) : (
+                                coverGroups.map((g) => (
+                                    <ShiftCard
+                                        key={g[0].groupId || g[0].id}
+                                        group={g}
+                                        variant="covering"
+                                        currentUserId={currentCoach.id}
+                                        coachById={coachById}
+                                        onRelease={onRelease}
+                                    />
+                                ))
+                            )}
+                        </Section>
+                    </div>
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
