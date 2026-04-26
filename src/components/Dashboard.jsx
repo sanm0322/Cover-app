@@ -64,32 +64,7 @@ export default function Dashboard({
                                 : 'No open shifts right now. Nice.'}
                     </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('1. Click captured at button level');
-                        if (typeof onPostShift === 'function') {
-                            console.log('2. onPostShift is a function, calling it');
-                            try {
-                                onPostShift();
-                                console.log('3. onPostShift returned successfully');
-                            } catch (err) {
-                                console.log('3. onPostShift threw:', err);
-                            }
-                        } else {
-                            console.log('2. onPostShift is NOT a function, it is:', typeof onPostShift, onPostShift);
-                        }
-                    }}
-                    style={{
-                        ...styles.bigPostBtn,
-                        cursor: 'pointer',
-                        border: 'none',
-                        position: 'relative',
-                        zIndex: 9999
-                    }}
-                >
+                <button onClick={onPostShift} style={styles.bigPostBtn}>
                     <Plus size={18} strokeWidth={2.5} />
                     <span>I need coverage</span>
                 </button>

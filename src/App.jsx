@@ -34,7 +34,6 @@ function Shell() {
   const coachById = useCoachLookup(allCoaches);
 
   const [modal, setModal] = useState(null);
-  console.log('Shell render — current modal state:', modal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [role, setRole] = useState('coach');  // 'coach' | 'manager'
 
@@ -268,7 +267,13 @@ function Shell() {
           />
         )}
       </main>
-
+      {modal?.type === 'post-shift' && (
+        <PostShiftModal
+          onClose={() => setModal(null)}
+          onSubmit={handlePostShift}
+          isSubmitting={isSubmitting}
+        />
+      )}
       {modal?.type === 'add-to-request' && (
         <PostShiftModal
           onClose={() => setModal(null)}
