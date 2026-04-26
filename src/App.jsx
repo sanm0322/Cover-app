@@ -34,6 +34,7 @@ function Shell() {
   const coachById = useCoachLookup(allCoaches);
 
   const [modal, setModal] = useState(null);
+  console.log('Shell render — current modal state:', modal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [role, setRole] = useState('coach');  // 'coach' | 'manager'
 
