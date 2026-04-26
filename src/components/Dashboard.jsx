@@ -64,7 +64,7 @@ export default function Dashboard({
                                 : 'No open shifts right now. Nice.'}
                     </p>
                 </div>
-                <button onClick={onPostShift} style={styles.bigPostBtn}>
+                <button onClick={() => onPostShift?.()} style={styles.bigPostBtn}>
                     <Plus size={18} strokeWidth={2.5} />
                     <span>I need coverage</span>
                 </button>
