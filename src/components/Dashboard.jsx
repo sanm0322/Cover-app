@@ -65,7 +65,12 @@ export default function Dashboard({
                     </p>
                 </div>
                 <button
-                    onClick={() => onPostShift && onPostShift()}
+                    onClick={() => {
+                        console.log('CLICKED!');
+                        alert('Click handler fired');
+                        if (onPostShift) onPostShift();
+                        else console.log('onPostShift is undefined');
+                    }}
                     style={{ ...styles.bigPostBtn, cursor: 'pointer', border: 'none' }}
                 >
                     <Plus size={18} strokeWidth={2.5} />
