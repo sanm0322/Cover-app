@@ -64,15 +64,7 @@ export default function Dashboard({
                                 : 'No open shifts right now. Nice.'}
                     </p>
                 </div>
-                <button
-                    onClick={() => {
-                        console.log('CLICKED!');
-                        alert('Click handler fired');
-                        if (onPostShift) onPostShift();
-                        else console.log('onPostShift is undefined');
-                    }}
-                    style={{ ...styles.bigPostBtn, cursor: 'pointer', border: 'none' }}
-                >
+                <button onClick={onPostShift} style={styles.bigPostBtn}>
                     <Plus size={18} strokeWidth={2.5} />
                     <span>I need coverage</span>
                 </button>
