@@ -5,7 +5,7 @@ import { isPast, hoursUntil, formatDay, formatRelative, groupShifts } from '../l
 import Stat from './primitives/Stat';
 import Section from './primitives/Section';
 import EmptyState from './primitives/EmptyState';
-import ShiftCard from './ShiftCard';
+import ShiftRow from './ShiftRow';
 import ViewModeToggle from './ViewModeToggle';
 import CalendarView from './CalendarView';
 
@@ -112,11 +112,9 @@ export default function ManagerView({ shifts, notifications, coachById, allCoach
                             <EmptyState message="Nothing here for this filter." />
                         ) : (
                             groupShifts(filtered).map((g) => (
-                                <ShiftCard
-                                    key={g[0].groupId || g[0].id}
+                                <ShiftRow
+                                    key={`${g[0].groupId || g[0].id}__${g[0].date}`}
                                     group={g}
-                                    variant="manager"
-                                    currentUserId={null}
                                     coachById={coachById}
                                 />
                             ))

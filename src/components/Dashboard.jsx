@@ -111,7 +111,7 @@ export default function Dashboard({
                             ) : (
                                 openGroups.map((g) => (
                                     <ShiftCard
-                                        key={g[0].groupId || g[0].id}
+                                        key={`${g[0].groupId || g[0].id}__${g[0].date}`}
                                         group={g}
                                         variant="open-other"
                                         currentUserId={currentCoach.id}
@@ -129,7 +129,7 @@ export default function Dashboard({
                             ) : (
                                 myGroups.map((g) => (
                                     <ShiftCard
-                                        key={g[0].groupId || g[0].id}
+                                        key={`${g[0].groupId || g[0].id}__${g[0].date}`}
                                         group={g}
                                         variant="mine"
                                         currentUserId={currentCoach.id}
@@ -148,7 +148,7 @@ export default function Dashboard({
                             ) : (
                                 coverGroups.map((g) => (
                                     <ShiftCard
-                                        key={g[0].groupId || g[0].id}
+                                        key={`${g[0].groupId || g[0].id}__${g[0].date}`}
                                         group={g}
                                         variant="covering"
                                         currentUserId={currentCoach.id}
