@@ -13,7 +13,7 @@ import { formatDay, hoursUntil, isPast } from '../lib/helpers';
  *   group: array of shift objects sharing a group_id + date
  *   coachById: function (coachId) => coach object
  */
-export default function ShiftRow({ group, coachById }) {
+export default function ShiftRow({ group, coachById, selectable, selected, onToggleSelect }) {
     const [expanded, setExpanded] = useState(false);
     const [hovered, setHovered] = useState(false);
 
@@ -63,11 +63,27 @@ export default function ShiftRow({ group, coachById }) {
                 style={{
                     ...styles.shiftRow,
                     ...(hovered ? styles.shiftRowHover : {}),
+                    ...(selected ? styles.shiftRowSelected : {}),
                 }}
                 onClick={() => setExpanded((e) => !e)}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
             >
+                {selectable ? (
+                    <input
+                        type="checkbox"
+                        checked={selected || false}
+                        onChange={(e) => {
+                            e.stopPropagation();
+                            onToggleSelect?.();
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={styles.shiftRowCheckbox}
+                    />
+                ) : (
+                    <div style={styles.shiftRowCheckboxPlaceholder} />
+                )}
+
                 <div style={styles.shiftRowDate}>{dateDisplay}</div>
                 <div style={styles.shiftRowMain}>
                     <span style={styles.shiftRowClass}>{classDisplay}</span>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, Activity, Calendar } from 'lucide-react';
 import { styles } from '../lib/styles';
 import { isPast, hoursUntil, formatDay, formatRelative, groupShifts } from '../lib/helpers';
@@ -8,6 +8,7 @@ import EmptyState from './primitives/EmptyState';
 import ShiftRow from './ShiftRow';
 import ViewModeToggle from './ViewModeToggle';
 import CalendarView from './CalendarView';
+import FloatingActionBar from './FloatingActionBar';
 
 /**
  * The manager's overview dashboard: team-wide stats, urgent banner,
@@ -25,12 +26,15 @@ import CalendarView from './CalendarView';
 export default function ManagerView({ shifts, notifications, coachById, allCoaches }) {
     const [filter, setFilter] = useState('active');
     const [mode, setMode] = useState('list');
+    const [selectedShiftIds, setSelectedShiftIds] = useState(new Set());
 
     const active = shifts.filter((s) => !isPast(s.date, s.time));
     const past = shifts.filter((s) => isPast(s.date, s.time));
     const openAll = active.filter((s) => s.status === 'open');
     const claimed = active.filter((s) => s.status === 'claimed');
     const urgent = openAll.filter((s) => hoursUntil(s.date, s.time) < 48);
+
+    const selectableShifts = active.filter((s) => s.status === 'open');
 
     const sortByTime = (arr) =>
         [...arr].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -46,6 +50,36 @@ export default function ManagerView({ shifts, notifications, coachById, allCoach
 
     const activeCoachCount = allCoaches.filter((c) => c.roles.includes('coach')).length;
 
+    const toggleSelect = (shift) => {
+        setSelectedShiftIds((prev) => {
+            const next = new Set(prev);
+            // Toggle every shift in this group (groups represent one day's shifts from one request)
+            const groupKey = `${shift.groupId || shift.id}__${shift.date}`;
+            const allInGroup = selectableShifts.filter((s) => `${s.groupId || s.id}__${s.date}` === groupKey);
+            const allCurrentlySelected = allInGroup.every((s) => next.has(s.id));
+
+            if (allCurrentlySelected) {
+                // Deselect all in this group
+                allInGroup.forEach((s) => next.delete(s.id));
+            } else {
+                // Select all in this group
+                allInGroup.forEach((s) => next.add(s.id));
+            }
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelectedShiftIds(new Set());
+
+    const selectAllOpen = () => {
+        const allOpenIds = selectableShifts.map((s) => s.id);
+        setSelectedShiftIds(new Set(allOpenIds));
+    };
+
+    useEffect(() => {
+        setSelectedShiftIds(new Set());
+    }, [filter]);
+    const selectedShifts = selectableShifts.filter((s) => selectedShiftIds.has(s.id));
     return (
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 20px 40px' }}>
             <div style={styles.heroRow}>
@@ -105,19 +139,47 @@ export default function ManagerView({ shifts, notifications, coachById, allCoach
                                 {f.label} <span style={styles.filterCount}>{f.n}</span>
                             </button>
                         ))}
+                        {selectableShifts.length > 0 && (
+                            <button
+                                onClick={() => {
+                                    if (selectedShiftIds.size > 0) {
+                                        clearSelection();
+                                    } else {
+                                        selectAllOpen();
+                                    }
+                                }}
+                                style={{
+                                    ...styles.selectAllBtn,
+                                    ...(selectedShiftIds.size > 0 ? styles.selectAllBtnActive : {}),
+                                }}
+                            >
+                                {selectedShiftIds.size > 0
+                                    ? `Clear (${selectedShiftIds.size})`
+                                    : 'Select all open'}
+                            </button>
+                        )}
                     </div>
 
                     <Section title="Shifts" count={filtered.length} icon={<Calendar size={14} />}>
                         {filtered.length === 0 ? (
                             <EmptyState message="Nothing here for this filter." />
                         ) : (
-                            groupShifts(filtered).map((g) => (
-                                <ShiftRow
-                                    key={`${g[0].groupId || g[0].id}__${g[0].date}`}
-                                    group={g}
-                                    coachById={coachById}
-                                />
-                            ))
+                            groupShifts(filtered).map((g) => {
+                                const firstShift = g[0];
+                                const isOpenGroup = g.some((s) => s.status === 'open');
+                                const allInGroupSelected = g.every((s) => selectedShiftIds.has(s.id));
+
+                                return (
+                                    <ShiftRow
+                                        key={`${firstShift.groupId || firstShift.id}__${firstShift.date}`}
+                                        group={g}
+                                        coachById={coachById}
+                                        selectable={isOpenGroup}
+                                        selected={isOpenGroup && allInGroupSelected}
+                                        onToggleSelect={() => toggleSelect(firstShift)}
+                                    />
+                                );
+                            })
                         )}
                     </Section>
                 </>
@@ -166,6 +228,11 @@ export default function ManagerView({ shifts, notifications, coachById, allCoach
                     )}
                 </div>
             </Section>
+            <FloatingActionBar
+                selectedShifts={selectedShifts}
+                coachById={coachById}
+                onClear={clearSelection}
+            />
         </div>
     );
 }

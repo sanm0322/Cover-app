@@ -85,9 +85,9 @@ export const groupShifts = (shiftsArr) => {
  * file needs updating.
  */
 export const CLASSES_BY_LOCATION = {
-  KA: ['Functional CrossFit', 'Strength', 'Olympic Weightlifting'],
-  OV: ['Classic CrossFit', 'Hyrox', 'Advanced CrossFit'],
-  HW: ['Classic CrossFit', 'Functional CrossFit', 'Strength', 'Hyrox', 'Olympic Weightlifting', 'Advanced CrossFit', 'Open Gym'],
+    KA: ['Functional CrossFit', 'Strength', 'Olympic Weightlifting'],
+    OV: ['Classic CrossFit', 'Hyrox', 'Advanced CrossFit'],
+    HW: ['Classic CrossFit', 'Functional CrossFit', 'Strength', 'Hyrox', 'Olympic Weightlifting', 'Advanced CrossFit', 'Open Gym'],
 };
 
 export const LOCATIONS = Object.keys(CLASSES_BY_LOCATION);
@@ -97,7 +97,7 @@ export const LOCATIONS = Object.keys(CLASSES_BY_LOCATION);
  * Useful for building filter dropdowns or displaying lists.
  */
 export const ALL_CLASSES = [
-  ...new Set(Object.values(CLASSES_BY_LOCATION).flat())
+    ...new Set(Object.values(CLASSES_BY_LOCATION).flat())
 ].sort();
 
 /**
@@ -105,8 +105,51 @@ export const ALL_CLASSES = [
  * Returns the row object; caller does the .insert().
  */
 export const buildNotification = (type, groupId, shiftIds, actorId) => ({
-  type,
-  group_id: groupId,
-  shift_ids: shiftIds,
-  actor_id: actorId,
+    type,
+    group_id: groupId,
+    shift_ids: shiftIds,
+    actor_id: actorId,
 });
+
+/**
+ * Builds a WhatsApp-formatted message listing the given shifts, grouped by day.
+ * Used by the manager's bulk-share action and could be reused by future
+ * notification flows.
+ *
+ * @param {Array} shifts - array of shift objects with date, time, className, location, postedBy
+ * @param {Function} coachById - lookup function for poster names
+ * @param {String} appUrl - URL to include at the bottom for claim link
+ * @returns {String} multi-line message ready to be URL-encoded
+ */
+export function buildShareMessage(shifts, coachById, appUrl) {
+    if (!shifts || shifts.length === 0) return '';
+
+    // Group by date
+    const byDate = shifts.reduce((acc, s) => {
+        if (!acc[s.date]) acc[s.date] = [];
+        acc[s.date].push(s);
+        return acc;
+    }, {});
+
+    // Sort dates and shifts within each date
+    const sortedDates = Object.keys(byDate).sort();
+
+    const lines = ['Hey guys, the following shift(s) still need coverage:'];
+
+    for (const date of sortedDates) {
+        lines.push('');
+        lines.push(formatDay(date));
+        const dayShifts = byDate[date].sort((a, b) => a.time.localeCompare(b.time));
+        for (const s of dayShifts) {
+            const poster = coachById(s.postedBy)?.name || 'Unknown';
+            lines.push(`• ${s.time.slice(0, 5)} ${s.className} @ ${s.location} (${poster})`);
+        }
+    }
+
+    lines.push('');
+    lines.push('If you can cover any of these:');
+    lines.push(appUrl);
+
+    return lines.join('\n');
+}
+
