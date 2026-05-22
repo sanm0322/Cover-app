@@ -29,11 +29,11 @@ interface WebhookPayload {
 }
 
 // Simple in-memory debounce. Each function instance keeps a Set of group_ids
-// it's already processed in the last 60 seconds. Since instances are short-lived,
+// it's already processed in the last 15 seconds. Since instances are short-lived,
 // this works for the common case (one form submission = N quick INSERTs from
 // the same client). For absolute correctness across instances, we'd add a
 // table-based lock — overkill at our scale.
-const recentGroupIds = new Set<string>();
+
 
 async function getCoachName(coachId: string): Promise<string> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/coaches?id=eq.${coachId}&select=name`, {
@@ -120,14 +120,34 @@ Deno.serve(async (req) => {
 
         const groupId = payload.record.group_id;
 
-        // Debounce: don't email twice for the same group within the function instance's lifetime
-        if (recentGroupIds.has(groupId)) {
+        // Database-backed dedup: try to insert a marker row.
+        // If the row already exists (primary-key conflict), another instance has
+        // already claimed this group — exit silently so we don't double-send.
+        const dedupRes = await fetch(`${SUPABASE_URL}/rest/v1/notification_dedupe`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY!,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({
+                group_id: groupId,
+                notification_type: 'shift-posted',
+            }),
+        });
+
+        if (dedupRes.status === 409) {
+            // Another instance already claimed this group_id — exit silently
             return new Response('already handled', { status: 200 });
         }
-        recentGroupIds.add(groupId);
+        if (!dedupRes.ok) {
+            console.error('Dedup insert failed:', dedupRes.status, await dedupRes.text());
+            // Continue anyway — better to send a possible duplicate than silently fail
+        }
 
-        // Wait 60 seconds to give all shifts in a multi-row submission time to arrive
-        await new Promise((r) => setTimeout(r, 15_000));
+        // Wait 3 seconds to give all shifts in a multi-row insert time to arrive
+        await new Promise((r) => setTimeout(r, 3_000));
 
         const [shifts, coachName] = await Promise.all([
             getGroupShifts(groupId),
@@ -155,7 +175,9 @@ Deno.serve(async (req) => {
 
         return new Response(JSON.stringify({ ok: true, sent_to: MANAGER_EMAILS }), { status: 200 });
     } catch (err) {
-        console.error('shift-posted error:', err);
-        return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error ? err.stack : undefined;
+        console.error('shift-posted error:', errorMessage, stack);
+        return new Response(JSON.stringify({ error: errorMessage, stack }), { status: 500 });
     }
 });
