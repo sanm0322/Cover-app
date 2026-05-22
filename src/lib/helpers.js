@@ -142,7 +142,7 @@ export function buildShareMessage(shifts, coachById, appUrl) {
         const dayShifts = byDate[date].sort((a, b) => a.time.localeCompare(b.time));
         for (const s of dayShifts) {
             const poster = coachById(s.postedBy)?.name || 'Unknown';
-            lines.push(`• ${s.time.slice(0, 5)} ${s.className} @ ${s.location} (${poster})`);
+            lines.push(`• ${s.time.slice(0, 5)} ${s.className} @ ${s.location}`);
         }
     }
 
